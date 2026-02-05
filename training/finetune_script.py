@@ -11,7 +11,7 @@ from datasets import load_dataset
 
 def main():
     # Load parameters from params.yaml
-    with open("params.yaml", "r") as f:
+    with open("/content/llm-model-generation/training/params.yaml", "r") as f:
         params = yaml.safe_load(f)
 
     hf_model_repo = params["hf_model_repo"]
