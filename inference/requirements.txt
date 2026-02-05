@@ -1,0 +1,12 @@
+# inference/requirements.txt
+gradio
+transformers
+peft
+trl
+huggingface_hub
+torch
+bitsandbytes
+accelerate
+unsloth[cu121] # or unsloth[cu118] depending on CUDA version on HF Spaces
+scipy # Required by unsloth
+pyyaml

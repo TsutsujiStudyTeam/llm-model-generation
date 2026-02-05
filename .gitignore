@@ -1,0 +1,49 @@
+# .gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+.Python
+build/
+dist/
+develop-eggs/
+.eggs/
+*.egg-info/
+.env
+.venv/
+venv/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+# VS Code
+.vscode/
+
+# IDE specific files
+.idea/
+
+# OS generated files
+.DS_Store
+.Trashes
+Thumbs.db
+
+# Training outputs
+outputs/
+
+# Hugging Face and ML specific caches/folders
+hf_model_repo/ # Local clone of the base model if downloaded
+hf_lora_repo/ # Local clone of the LoRA adapter if downloaded
+huggingface/ # Hugging Face cache
+wandb/ # Weights & Biases
+mlruns/ # MLflow
+lightning_logs/ # PyTorch Lightning
+unsloth_cache/ # Unsloth specific cache
+
+# Logs
+*.log
+log/
+tmp/
+*.tmp
+temp/
