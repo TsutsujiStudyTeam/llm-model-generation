@@ -1,9 +1,12 @@
-# training/params.yaml
-# Hugging Face Model Repository for base model
+# training/params.yaml — 学習パラメータ（対話入力なしで Run all する前提）
+#
+# hf_lora_repo: Hugging Face 上の LoRA アップロード先（空のモデルリポジトリを事前に作成）
+#   環境変数 HF_LORA_REPO が設定されていればそちらが優先されます。
+
+# Hugging Face: ベースモデル（Unsloth 4bit）
 hf_model_repo: "unsloth/llama-3.2-alpaca-bnb-4bit"
 
-# Hugging Face LoRA Adapter Repository (USER MUST UPDATE THIS)
-# e.g., "YOUR_HF_USERNAME/llama-3.2-lora-adapter"
+# Hugging Face: LoRA アダプタの保存先（必ず自分の user/repo に書き換える）
 hf_lora_repo: "YOUR_HF_USERNAME/my-llama-3.2-lora-adapter"
 
 # Training Parameters
