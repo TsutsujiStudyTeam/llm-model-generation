@@ -1,4 +1,5 @@
 # inference/requirements.txt
+python-dotenv
 gradio
 transformers
 peft

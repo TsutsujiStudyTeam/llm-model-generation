@@ -7,7 +7,7 @@
 hf_model_repo: "unsloth/llama-3.2-alpaca-bnb-4bit"
 
 # Hugging Face: LoRA アダプタの保存先（必ず自分の user/repo に書き換える）
-hf_lora_repo: "YOUR_HF_USERNAME/my-llama-3.2-lora-adapter"
+hf_lora_repo: "Copel1/my-llama-3.2-lora-adapter"
 
 # Training Parameters
 lora_r: 16

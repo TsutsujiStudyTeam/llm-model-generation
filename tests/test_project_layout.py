@@ -23,6 +23,13 @@ def test_params_yaml_exists_and_loads():
         assert key in data, f"Missing key: {key}"
 
 
+def test_env_example_exists():
+    path = ROOT / ".env.example"
+    assert path.is_file(), f"Missing {path}"
+    text = path.read_text(encoding="utf-8")
+    assert "HF_TOKEN" in text
+
+
 def test_dataset_jsonl_exists():
     path = ROOT / "data" / "dataset.jsonl"
     assert path.is_file(), f"Missing {path}"

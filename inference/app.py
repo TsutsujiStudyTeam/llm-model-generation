@@ -1,4 +1,6 @@
 # inference/app.py
+from pathlib import Path
+
 import gradio as gr
 import torch
 from unsloth import FastLanguageModel
@@ -6,6 +8,13 @@ from transformers import TextStreamer, AutoTokenizer
 from huggingface_hub import HfApi
 import os
 import yaml
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
 
 # --- Configuration ---
 # Assuming params.yaml is present in the inference directory or we hardcode defaults

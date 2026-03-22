@@ -11,16 +11,38 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import torch
+
+if not torch.cuda.is_available():
+    raise RuntimeError(
+        "CUDA GPU が使えません。Unsloth の学習には GPU が必須です。\n"
+        "Google Colab: メニュー「ランタイム」→「ランタイムのタイプを変更」→"
+        "「ハードウェア アクセラレータ」で GPU（T4 など）を選び「保存」してから、"
+        "このセル／スクリプトを再実行してください。"
+    )
+
+# Unsloth は trl / transformers より先に import する（最適化のため）
+from unsloth import FastLanguageModel
+
 import yaml
 from datasets import load_dataset
 from huggingface_hub import login
 from trl import SFTTrainer
 from transformers import TrainingArguments
-from unsloth import FastLanguageModel
 
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
+
+
+def _maybe_load_dotenv() -> None:
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    path = _repo_root() / ".env"
+    if path.is_file():
+        load_dotenv(path)
 
 
 def _load_params() -> dict:
@@ -34,7 +56,8 @@ def _require_hf_token() -> str:
     if not token:
         raise RuntimeError(
             "HF_TOKEN is not set. In Google Colab, add HF_TOKEN in Secrets (🔑). "
-            "Locally, set HF_TOKEN before running (e.g. export HF_TOKEN=...)."
+            "Locally: create a .env file in the repo root with HF_TOKEN=... (see .env.example), "
+            "or export HF_TOKEN in the shell."
         )
     return token
 
@@ -53,6 +76,7 @@ def _resolve_hf_lora_repo(params: dict) -> str:
 
 
 def main() -> None:
+    _maybe_load_dotenv()
     hf_token = _require_hf_token()
     login(token=hf_token, add_to_git_credential=False)
 
