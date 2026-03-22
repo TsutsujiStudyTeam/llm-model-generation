@@ -4,64 +4,90 @@
 
 このプロジェクトは、Llama 系（Unsloth 4bit）モデルのファインチューニング（学習）から、学習済み LoRA アダプタの Hugging Face Hub へのデプロイ、そして複数のモデルを切り替えて試せる推論環境を作りました。
 Google Colab と Hugging Face Spaces を活用し、コストをかけずに LLM の学習から推論までを体験できることを目指します。
+このプログラムは対話入力（`input` / `notebook_login` 等）を使いません。また、ソースコードを修正しなくても学習が完走します。Google Colab環境での実行を推奨しますが、ローカルでの実行も可能です。`.env` に必要な情報を記載するのみで他に設定は不要です。
 
-**操作は最小限**: このプログラムはは対話入力（`input` / `notebook_login` 等）を使いません。Google Colab ではシークレットに **`HF_TOKEN`** と **`HF_LORA_REPO`** を登録すれば、**GitHub 上の `params.yaml` を編集しなくても** **「すべてのセルを実行」** で学習が完走します（ベースモデルを変えたいときだけ任意で **`HF_MODEL_REPO`**）。ローカルでは `.env` に同じ名前を書くか、`params.yaml` を直します。
+下記に本プロジェクトで登場する重要なワードの説明をします。
+| 概要 | 説明 |
+| --- | --- |
+| **Google Colabとは？** | ブラウザ上で誰でも無料で **プログラム（Python）** が実行できる、Googleのサービスです。GPUリソースを利用した学習や推論処理を動かすことも可能なため、GPU付きのPCを持っていなくても重い学習処理などを実行する事ができます。このプロジェクトではGoogle Colab上で学習を実行する事を前提に開発されています。 |
+| **LoRAとは？** | **Lo**w-**R**ank **A**daptation の略で、大規模言語モデル全体を書き換えず、**ごく一部の追加パラメータだけを学習**して用途に合わせる手法です。学習・保存の負担が小さく、元モデルに **アダプタ**（差分の重み）を足す形で配布しやすいのが特徴です。また、学習した結果出力される「元モデル + アダプタ」の事を指して「LoRA」と呼ぶ事もあります。 |
+| **Hugging Faceとは？** | 機械学習のモデル・データセット・ツールを集めたコミュニティとサービスで、**Hugging Face Hub** 上にモデルを公開・配布できます。本プロジェクトでは、学習に使う **ベースモデル（Llama 4bit など）を Hub から取得**し、学習後に付け足した **LoRA をあなた専用の空リポジトリへアップロード**します。アクセスには **Access Token**（Colab ではシークレット `HF_TOKEN`）を使います。 |
+| **アダプタとは？** | ここでは **LoRA で学習した「追加パーツ」＝差分の重み一式**を指します。ベースの Llama 本体は Hub 上の共有モデルのまま利用し、**あなたが学習した分だけ**を **別の Hub リポジトリ（シークレット `HF_LORA_REPO`）へ push** します。推論では **先にベースモデルを読み込み、その後このアダプタを重ねて読み込む**ことで、学習した内容を反映した応答が得られます。 |
+| **Unslothとは？** | **Llama などの LLM の学習・推論を速くし、GPU メモリを抑える**ためのライブラリです。一般の PC 向け GPU や Colab の GPU でもLLMを扱いやすくなります。本プロジェクトでは Unsloth 経由でモデルを読み込み、LoRA で学習を行う仕様になっています。 |
+| **Llamaとは？** | Meta が公開している **大規模言語モデル（LLM）のシリーズ名**です（Llama 2／3 など世代があります）。本プロジェクトでは、Hugging Face Hub 上の **Llama 3.2 系・4bit 版（Unsloth が配布しているビルドのもの）**を **ベースモデル**としてダウンロードし、その上に **LoRA で追加学習**します。 |
 
----
+## 2. 事前準備
 
-## ▶ 実行手順
+- 学習・推論を体験する前に下記の準備をする事
 
-### A. LLMに学習させる
+### 2-1. Hugging Face アカウントとトークンの発行
 
-**Colab**: GitHub のソースは**そのまま**使い、Hub のリポジトリ ID は **シークレット**に書きます（`params.yaml` を編集・push する必要はありません）。
+1. ✅ [Hugging Face](https://huggingface.co/join) でアカウントを作成します。
+2. 🔑 **Access Token（Write）**  を作成します。
+    - [Settings → Access Tokens](https://huggingface.co/settings/tokens) で **Write** 権限のトークンを作成します。この値は忘れずにメモしておいてください。（流出しないよう扱いに気を付けること）
 
-| # | やること |
-|---|----------|
-| 1 | [Hugging Face](https://huggingface.co/join) にログインし、[Access Tokens](https://huggingface.co/settings/tokens) で **Write** 権限のトークンを作成する。 |
-| 2 | Hugging Face 上で **空のモデル用リポジトリ**を新規作成する（例: `あなたのユーザー名/好きなリポジトリ名`）。 |
-| 3 | ブラウザから Google Colab にアクセスし、GitHub からこのプロジェクトのノートブック（`training/finetune.ipynb`）を開く。 |
-| 4 | （**初回のみ**）Colab 左メニュー **🔑 シークレット** に次を登録する。**ノートブック先頭の一覧と同じ名前**にすること。 |
-|  | **`HF_TOKEN`** … 手順 1 のトークン（必須） |
-|  | **`HF_LORA_REPO`** … 手順 2 のモデル ID `ユーザー名/リポジトリ名`（必須） |
-|  | **`HF_MODEL_REPO`** … 別のベースモデルを使うときのみ（任意。未設定なら `params.yaml` の既定） |
-|  | **`GITHUB_REPO_OWNER`** / **`GITHUB_REPO_NAME`** … 自分の GitHub にフォークした clone 元を指定するときのみ（任意） |
-| 5 | メニュー **ランタイム → ランタイムのタイプを変更** で **GPU（T4 など）** を選ぶ。 |
-| 6 | メニュー **ランタイム → すべてのセルを実行** を選び、最後まで完了するのを待つ。 |
+### 2-2. Hugging Face に LoRA 用の空リポジトリを準備
 
-**ローカルで学習する場合**: リポジトリルートの `.env` に `HF_TOKEN` と `HF_LORA_REPO`（任意で `HF_MODEL_REPO`）を書くか、`training/params.yaml` の `hf_lora_repo` を自分の Hub ID に変更する。
+1. [Hugging Face](https://huggingface.co/new) で **New model**（または同等の「新しいモデル用リポジトリ」）を作成する。  
+2. 表示されている **`namespace/リポジトリ名`** を覚える、またはメモしておくこと。後段の作業で使用します。
 
-**結果**: 指定した Hub リポジトリに LoRA 学習したモデルがアップロードされます。ノートブック末尾のセルは、シークレット／環境変数または `params.yaml` で解決したベースモデルと LoRA を読み込んで Colab 上で簡易推論テストできます。
+## ▶ 3. 実行手順
 
-### B. 学習させたモデルで推論する
+### LLMに学習させる手順
 
-| 場所 | 手順の場所 |
-|------|------------|
-| **Hugging Face Spaces** | 下の **「6. LLM 推論環境」**（GitHub に push → Space 作成 → `HF_TOKEN` を Secret に設定）。 |
-| **自分の PC**（GPU・大きな依存が必要） | 下の **「7. ローカルでの推論アプリ実行」**。 |
+#### 手順
 
-- TODO：手順を準備
+| ステップ | 操作内容 | 詳細・入力事項 |
+| :--- | :--- | :--- |
+| **1** | **Colabにアクセス** | [Google Colab 公式](https://colab.research.google.com/?hl=ja) を開く |
+| **2** | **GitHubから読み込み** | 「ノートブックを開く」→ 左側の **[GitHub]** タブを選択 |
+| **3** | **組織を検索** | 検索窓に `TsutsujiStudyTeam` と入力し検索 |
+| **4** | **リポジトリを選択** | リポジトリ：`llm-model-generation`<br>ブランチ：`main` を選択 |
+| **5** | **ファイルを開く** | `training/finetune.ipynb` をクリック |
+| **6** | **シークレット設定** | 左メニューの **鍵マーク（🔑）** を選択 |
+| **7** | **トークンの登録** | 「新しいシークレットを追加」から以下を登録<br>・`HF_TOKEN`：Hugging Faceで発行したトークン<br>・`HF_LORA_REPO`：`ユーザー名/リポジトリ名` |
+| **8** | **目次へ戻る** | 左メニューの **目次アイコン** を選択 |
+| **9** | **ランタイム設定** | 右上の「▼」→ **[ランタイムのタイプを変更]** |
+| **10** | **GPUを選択** | ハードウェアアクセラレータで **[T4 GPU]** を選択し保存 |
+| **11** | **実行開始** | メニューの **[ランタイム]** → **[すべてのセルを実行]** |
+| **12** | **完了確認** | 「3. 学習の実行」セルの出力に<br>**`# 学習完了 — Hugging Face の「モデル ID」`** が出れば成功 |
 
----
+> [!IMPORTANT]
+> **シークレットの注意点**: `HF_TOKEN` などを入力した際、右側の「ノートブックからのアクセス」スイッチを**オン**にするのを忘れないようにしてください。
 
-## 🎯 2. 主要機能
+### 学習させたモデルで推論する手順
 
--   **学習環境**:
-    *   Google Colab（無料版 T4 GPU）を利用。
-    *   VS Code の Google Colab 拡張機能による編集・実行（任意）。
-    *   `Unsloth` による高速かつメモリ効率の良い学習。
-    *   **非対話**: `HF_TOKEN`（環境変数 / Colab Secrets）と `params.yaml` のみで学習・Hub アップロード。
-    *   学習スクリプト: `training/finetune_script.py`（ノートブックから 1 コマンドで実行）。
--   **推論環境**:
-    *   Hugging Face Spaces（無料版 CPU Basic）を利用。
-    *   ブラウザから操作可能な Gradio チャット UI。
-    *   **動的モデル切り替え**: プルダウンから Hub 上の LoRA アダプタを選択してロード。
--   **管理・運用**:
-    *   コードは GitHub、成果物は Hugging Face Hub。
-    *   秘匿情報は `.env`（ローカル）または各サービスの Secret（Colab / Spaces）で管理し、コードに直書きしない。
+#### A. Google Colabで実行する場合の手順【推奨】
 
----
+-
 
-## 📂 3. フォルダ構成
+| ステップ | 操作内容 | 詳細・入力事項 |
+| :--- | :--- | :--- |
+| **1** | **学習を実行する** |  **LLMに学習させる手順** を完了させる。 |
+| **2** | **セクション 4（簡易推論）を実行する** | **「4. 簡易推論テスト」** のコードセルを実行する。（すべてのセルを実行を実施しているため、勝手に実行されているはずです） |
+| **3** | **出力を確認する** | セルにモデルの応答テキストが表示されれば成功。`[スキップ] CUDA がありません` と出る場合はランタイムが GPU になっているか確認する |
+
+#### B. ローカルで推論実行する場合の手順
+
+1. リポジトリのルートに **`.env`** を作成し、`.env.example` を参考に **`HF_TOKEN=...`** を書く。
+2. **`inference/app.py`** 内の **`DEFAULT_LORA_ADAPTER_REPO`** を、学習時に **`HF_LORA_REPO`** で push した **Hub のモデル ID**（`ユーザー名/リポジトリ名`）に合わせて書き換える。
+3. このリポジトリのルートディレクトリでPowerShellを開く
+4. 下記のコマンドを実行し仮想環境を作成・有効化しライブラリをインストールする
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r inference/requirements.txt
+```
+5. 下記のコマンドで推論を実行する
+```powershell
+python inference/app.py
+```
+
+> [!IMPORTANT]
+> **仮想環境を必ず使用**してください（システムの Python へ直接 `pip install` しないこと！）
+> **推論は NVIDIA GPU（CUDA）向け**です。GPU がない環境では、学習と同様に **Colab** や **Hugging Face Spaces** の利用を検討してください。
+
+## 📂 4. フォルダ構成
 
 ```text
 .
@@ -79,58 +105,3 @@ Google Colab と Hugging Face Spaces を活用し、コストをかけずに LLM
 ├── .env                     # ローカル用（Git 対象外・自分で作成）
 └── README.md
 ```
-
----
-
-## 🛠️ 4. 環境セットアップガイド
-
-### Hugging Face アカウントとトークン
-
-✅ [Hugging Face](https://huggingface.co/join) でアカウントを作成します。
-
-🔑 **Access Token（Write）**  
-[Settings → Access Tokens](https://huggingface.co/settings/tokens) で **Write** 権限のトークンを作成します。学習完了後の `push_to_hub` に必要です。
-
----
-
-## 💬 5. クラウド推論環境（Hugging Face Spaces）での推論実行
-
-### 1. GitHub へプッシュ
-
-### 2. Space の作成（GitHub 連携）
-
-1. [Hugging Face Spaces](https://huggingface.co/spaces/new) で **New Space**。
-2. **SDK**: Gradio、**Hardware**: CPU Basic（無料枠）。
-3. **Link to a GitHub repository** で本リポジトリを選択（または手動で `inference/` を配置）。
-4. Space の **Settings → Secrets** に `HF_TOKEN` を設定（プライベートアダプタの読み込み等に使用）。
-
-Space は `inference/requirements.txt` をインストールし、`inference/app.py` を起動します（リポジトリルートに `app.py` を置く構成の場合は、Space の README に従いパスを調整してください）。
-
-### 3. アプリの利用
-
-プルダウンで LoRAモデル を選び、チャットで試します。初回はモデル・アダプタのダウンロードに時間がかかることがあります。
-
----
-
-## 🖥️ 6. ローカルでの推論実行
-
-**仮想環境を必ず使用**してください（システムの Python へ直接 `pip install` しないこと）。
-
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r inference/requirements.txt
-python inference/app.py
-```
-
----
-
-## 🤝 7. 貢献
-
-バグ報告・機能要望・プルリクエストを歓迎します。
-
----
-
-## 📄 8. ライセンス
-
-MIT License。詳細は `LICENSE` を参照してください。
