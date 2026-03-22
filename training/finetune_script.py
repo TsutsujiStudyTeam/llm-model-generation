@@ -54,13 +54,32 @@ def _load_params() -> dict:
         return yaml.safe_load(f)
 
 
+def _colab_userdata(name: str) -> str:
+    """Colab シークレット（環境変数に未反映のときのフォールバック）。"""
+    try:
+        from google.colab import userdata
+    except ImportError:
+        return ""
+    try:
+        raw = userdata.get(name)
+    except Exception:
+        return ""
+    if raw is None:
+        return ""
+    return str(raw).strip()
+
+
 def _require_hf_token() -> str:
     token = os.environ.get("HF_TOKEN", "").strip()
     if not token:
+        token = _colab_userdata("HF_TOKEN")
+        if token:
+            os.environ["HF_TOKEN"] = token
+    if not token:
         raise RuntimeError(
-            "HF_TOKEN is not set. In Google Colab, add HF_TOKEN in Secrets (🔑). "
-            "Locally: create a .env file in the repo root with HF_TOKEN=... (see .env.example), "
-            "or export HF_TOKEN in the shell."
+            "HF_TOKEN is not set. In Google Colab, add HF_TOKEN in Secrets (🔑) and grant "
+            "this notebook access when prompted. Run section 2 before training, or set "
+            "os.environ['HF_TOKEN']. Locally: use .env (see .env.example) or export HF_TOKEN."
         )
     return token
 
@@ -80,6 +99,10 @@ def _resolve_hf_model_repo(params: dict) -> str:
     env_repo = os.environ.get("HF_MODEL_REPO", "").strip()
     if env_repo:
         return env_repo
+    colab_repo = _colab_userdata("HF_MODEL_REPO")
+    if colab_repo:
+        os.environ["HF_MODEL_REPO"] = colab_repo
+        return colab_repo
     repo = (params.get("hf_model_repo") or "").strip()
     if not repo:
         raise RuntimeError(
@@ -92,12 +115,19 @@ def _resolve_hf_lora_repo(params: dict) -> str:
     env_repo = os.environ.get("HF_LORA_REPO", "").strip()
     if env_repo:
         return env_repo
+    colab_repo = _colab_userdata("HF_LORA_REPO")
+    if colab_repo:
+        os.environ["HF_LORA_REPO"] = colab_repo
+        return colab_repo
     repo = (params.get("hf_lora_repo") or "").strip()
     if not repo or "YOUR_USERNAME" in repo:
         raise RuntimeError(
-            "Set your Hugging Face LoRA repo id via Colab Secret HF_LORA_REPO, "
-            "or hf_lora_repo in training/params.yaml (replace YOUR_USERNAME/...), "
-            "or export HF_LORA_REPO."
+            "LoRA の Hub 先（モデル ID）が未設定です。\n"
+            "・Google Colab: 左の 🔑 シークレットに **HF_LORA_REPO** を追加し、値に "
+            "`あなたのユーザー名/空のモデルリポジトリ名` を入れる。実行時に「このノートブックに許可」"
+            "を選ぶ。\n"
+            "・または `training/params.yaml` の **hf_lora_repo** を同じ形式の実 ID に書き換える。\n"
+            "・ローカル: `.env` に HF_LORA_REPO=... か、環境変数で export する。"
         )
     return repo
 
