@@ -127,3 +127,26 @@ python inference/app.py
 | **カスタマーチャット（複数往復・担当口調）** をさせる | **Messages型** | **直前文脈を踏まえた返答**・**役割の一貫性**が出やすい。 | 1 レコードに**実際の会話列**を入れる。`system` で**口調・禁止事項**を固定。 |
 | **既存ログをほぼそのまま覚えさせる** | **Text-only型** / **Alpaca型** (分解する) | ログの**書式に寄った**応答になりやすい（良くも悪くも**なぞり**やすい）。 | `text` にするなら、**推論時にユーザーが入力する部分とモデルが出す部分**の境界を、データ上もはっきりさせる。 |
 | **「質問のあとに答えだけ」覚えさせる** | **Prompt–Completion型** | 質問文の**直後の答え**として続きやすい。 | `prompt` を**実際の推論で渡す文言**に近づける。`completion` は**答え本体だけ**にすると前置きが減りやすい。 |
+
+## 6. ベースモデルの代替候補一覧
+
+- 規模が大きいほど精度の高いモデルです。（Bとは重みパラメータの数を示す単位のこと。1B = 10億パラメータ）
+- 3B以下は超軽量モデル、7B以上から実用レベル、70BはGPT-4などに近い賢い推論能力を持つと言われています。
+- VRAM が小さい無料 Colab では **8B 以上は失敗しやすい** 傾向があります。
+
+| Hub モデル ID | 目安規模 | メモ |
+| --- | --- | --- |
+| [unsloth/Llama-3.2-3B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Llama-3.2-3B-Instruct-bnb-4bit) | 3B | **本リポジトリの既定**。Colab 向けバランス。 |
+| [unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit) | 8B | Llama 3.1 Instruct。3B より高負荷。 |
+| [unsloth/llama-3-8b-Instruct-bnb-4bit](https://huggingface.co/unsloth/llama-3-8b-Instruct-bnb-4bit) | 8B | Llama 3 系 8B Instruct。 |
+| [unsloth/Hermes-3-Llama-3.1-8B-bnb-4bit](https://huggingface.co/unsloth/Hermes-3-Llama-3.1-8B-bnb-4bit) | 8B | Nous Hermes 3（Llama 3.1 8B ベース）。 |
+| [unsloth/Llama-3.1-Storm-8B-bnb-4bit](https://huggingface.co/unsloth/Llama-3.1-Storm-8B-bnb-4bit) | 8B | Storm（Llama 3.1 8B 系）。 |
+| [unsloth/Qwen2.5-7B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Qwen2.5-7B-Instruct-bnb-4bit) | 7B | Qwen2.5 Instruct。多言語用途の定番の一つ。 |
+| [unsloth/mistral-7b-instruct-v0.3-bnb-4bit](https://huggingface.co/unsloth/mistral-7b-instruct-v0.3-bnb-4bit) | 7B | Mistral 7B Instruct v0.3。 |
+| [unsloth/gemma-2-9b-it-bnb-4bit](https://huggingface.co/unsloth/gemma-2-9b-it-bnb-4bit) | 約 9B | Gemma 2 IT（Google）。 |
+| [unsloth/Meta-Llama-3.1-70B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Meta-Llama-3.1-70B-Instruct-bnb-4bit) | 70B | 大規模。**高 VRAM**（無料 Colab では厳しいことが多い）。 |
+| [unsloth/Llama-3.3-70B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Llama-3.3-70B-Instruct-bnb-4bit) | 70B | Llama 3.3 70B Instruct。同上。 |
+
+### ベースモデルを変更する場合
+Google Colabのシークレットに **HF_MODEL_REPO** パラメータを追加し、モデルIDを記載する。
+- (例) ```HF_MODEL_REPO```：```unsloth/llama-3-8b-Instruct-bnb-4bit```
