@@ -6,12 +6,18 @@ training/params.yaml and/or environment variables.
 
 Colab Secrets (🔑): HF_TOKEN (required). HF_LORA_REPO and HF_MODEL_REPO override
 params.yaml when set (recommended so you need not edit the repo on GitHub).
+
+Optional training data: TRAINING_DATASET_PATH (local path to Alpaca JSONL),
+TRAINING_DATASET_URL (https URL to download), or Colab secrets of the same names.
+Default file: training/params.yaml → dataset_jsonl (usually data/dataset.jsonl).
 Locally: use .env (see .env.example) or export the same variable names.
 """
 
 from __future__ import annotations
 
+import hashlib
 import os
+import urllib.request
 from pathlib import Path
 
 import torch
@@ -132,6 +138,49 @@ def _resolve_hf_lora_repo(params: dict) -> str:
     return repo
 
 
+def _download_training_dataset_url(url: str, repo_root: Path) -> Path:
+    if not url.lower().startswith(("http://", "https://")):
+        raise RuntimeError(
+            "TRAINING_DATASET_URL must start with http:// or https:// "
+            f"(got: {url[:80]!r})"
+        )
+    cache_dir = repo_root / "training" / ".dataset_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(url.encode("utf-8")).hexdigest()[:20]
+    out = cache_dir / f"from_url_{digest}.jsonl"
+    if not out.is_file() or out.stat().st_size == 0:
+        print(f"Downloading training dataset: {url}\n  -> {out}")
+        urllib.request.urlretrieve(url, out)
+    if not out.is_file() or out.stat().st_size == 0:
+        raise RuntimeError(f"Download failed or empty file: {out}")
+    return out.resolve()
+
+
+def _resolve_training_dataset_path(params: dict, repo_root: Path) -> Path:
+    """TRAINING_DATASET_PATH / TRAINING_DATASET_URL / params dataset_jsonl の順で解決。"""
+    raw_path = os.environ.get("TRAINING_DATASET_PATH", "").strip()
+    if not raw_path:
+        raw_path = _colab_userdata("TRAINING_DATASET_PATH")
+    if raw_path:
+        p = Path(raw_path).expanduser()
+        if not p.is_file():
+            raise FileNotFoundError(
+                f"TRAINING_DATASET_PATH は存在するファイルを指してください: {p}"
+            )
+        return p.resolve()
+
+    raw_url = os.environ.get("TRAINING_DATASET_URL", "").strip()
+    if not raw_url:
+        raw_url = _colab_userdata("TRAINING_DATASET_URL")
+    if raw_url:
+        return _download_training_dataset_url(raw_url, repo_root)
+
+    rel = str(params.get("dataset_jsonl") or "data/dataset.jsonl").strip()
+    q = Path(rel)
+    dataset_path = q if q.is_absolute() else (repo_root / q)
+    return dataset_path.resolve()
+
+
 def main() -> None:
     _maybe_load_dotenv()
     hf_token = _require_hf_token()
@@ -158,11 +207,12 @@ def main() -> None:
     seed = int(params["seed"])
 
     repo_root = _repo_root()
-    dataset_path = repo_root / "data" / "dataset.jsonl"
+    dataset_path = _resolve_training_dataset_path(params, repo_root)
     if not dataset_path.is_file():
         raise FileNotFoundError(f"Dataset not found: {dataset_path}")
 
     print("2. Data Preparation")
+    print(f"   (dataset: {dataset_path})")
     dataset = load_dataset(
         "json",
         data_files={"train": str(dataset_path)},

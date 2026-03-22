@@ -32,6 +32,7 @@ Thumbs.db
 
 # Training outputs
 outputs/
+training/.dataset_cache/
 
 # Hugging Face and ML specific caches/folders
 hf_model_repo/ # Local clone of the base model if downloaded
