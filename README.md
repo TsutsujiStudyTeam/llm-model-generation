@@ -137,9 +137,9 @@ python inference/app.py
 
 | Hub モデル ID | 目安規模 | メモ |
 | --- | --- | --- |
-| [unsloth/Llama-3.2-3B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Llama-3.2-3B-Instruct-bnb-4bit) | 3B | **本リポジトリの既定**。Colab 向けバランス。 |
+| [unsloth/Llama-3.2-3B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Llama-3.2-3B-Instruct-bnb-4bit) | 3B | 軽量モデル。8B以上で失敗した場合はこちらを使用してください。 |
 | [unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit) | 8B | Llama 3.1 Instruct。3B より高負荷。 |
-| [unsloth/llama-3-8b-Instruct-bnb-4bit](https://huggingface.co/unsloth/llama-3-8b-Instruct-bnb-4bit) | 8B | Llama 3 系 8B Instruct。 |
+| [unsloth/llama-3-8b-Instruct-bnb-4bit](https://huggingface.co/unsloth/llama-3-8b-Instruct-bnb-4bit) | 8B | **本リポジトリの既定** Llama 3 系 8B Instruct。 |
 | [unsloth/Hermes-3-Llama-3.1-8B-bnb-4bit](https://huggingface.co/unsloth/Hermes-3-Llama-3.1-8B-bnb-4bit) | 8B | Nous Hermes 3（Llama 3.1 8B ベース）。 |
 | [unsloth/Llama-3.1-Storm-8B-bnb-4bit](https://huggingface.co/unsloth/Llama-3.1-Storm-8B-bnb-4bit) | 8B | Storm（Llama 3.1 8B 系）。 |
 | [unsloth/Qwen2.5-7B-Instruct-bnb-4bit](https://huggingface.co/unsloth/Qwen2.5-7B-Instruct-bnb-4bit) | 7B | Qwen2.5 Instruct。多言語用途の定番の一つ。 |
@@ -150,7 +150,7 @@ python inference/app.py
 
 ### ベースモデルを変更する場合
 Google Colabのシークレットに **HF_MODEL_REPO** パラメータを追加し、モデルIDを記載する。
-- (例) ```HF_MODEL_REPO```：```unsloth/llama-3-8b-Instruct-bnb-4bit```
+- (例) ```HF_MODEL_REPO```：```unsloth/Llama-3.2-3B-Instruct-bnb-4bit```
 
 ## 補足資料: 学習〜推論のフロー
 

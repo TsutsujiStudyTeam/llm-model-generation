@@ -5,7 +5,7 @@
 
 # Hugging Face: ベースモデル（Unsloth 公式の 4bit。存在する ID を指定すること）
 # 参考: https://huggingface.co/unsloth/Llama-3.2-3B-Instruct-bnb-4bit
-hf_model_repo: "unsloth/Llama-3.2-3B-Instruct-bnb-4bit"
+hf_model_repo: "unsloth/llama-3-8b-Instruct-bnb-4bit"
 
 # Hugging Face: LoRA アップロード先。Colab ではシークレット HF_LORA_REPO を推奨。
 hf_lora_repo: "YOUR_USERNAME/YOUR_LORA_REPO"
