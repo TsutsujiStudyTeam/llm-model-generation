@@ -1,9 +1,12 @@
 """
 LoRA fine-tuning entrypoint for Google Colab and local runs.
 
-No interactive prompts: configure training/params.yaml and set HF_TOKEN in the environment.
-In Colab, register HF_TOKEN under Secrets (🔑). Optionally override the adapter repo with
-HF_LORA_REPO.
+No interactive prompts: set HF_TOKEN in the environment and configure Hub repo ids via
+training/params.yaml and/or environment variables.
+
+Colab Secrets (🔑): HF_TOKEN (required). HF_LORA_REPO and HF_MODEL_REPO override
+params.yaml when set (recommended so you need not edit the repo on GitHub).
+Locally: use .env (see .env.example) or export the same variable names.
 """
 
 from __future__ import annotations
@@ -73,15 +76,28 @@ def _coerce_float(value, *, name: str) -> float:
     raise TypeError(f"{name}: expected number, got {type(value).__name__}: {value!r}")
 
 
+def _resolve_hf_model_repo(params: dict) -> str:
+    env_repo = os.environ.get("HF_MODEL_REPO", "").strip()
+    if env_repo:
+        return env_repo
+    repo = (params.get("hf_model_repo") or "").strip()
+    if not repo:
+        raise RuntimeError(
+            "Set hf_model_repo in training/params.yaml, or set HF_MODEL_REPO in the environment."
+        )
+    return repo
+
+
 def _resolve_hf_lora_repo(params: dict) -> str:
     env_repo = os.environ.get("HF_LORA_REPO", "").strip()
     if env_repo:
         return env_repo
     repo = (params.get("hf_lora_repo") or "").strip()
-    if not repo or "YOUR_HF_USERNAME" in repo:
+    if not repo or "YOUR_USERNAME" in repo:
         raise RuntimeError(
-            "Set hf_lora_repo in training/params.yaml to your Hugging Face repo id "
-            '(e.g. "username/my-adapter"), or set HF_LORA_REPO in the environment.'
+            "Set your Hugging Face LoRA repo id via Colab Secret HF_LORA_REPO, "
+            "or hf_lora_repo in training/params.yaml (replace YOUR_USERNAME/...), "
+            "or export HF_LORA_REPO."
         )
     return repo
 
@@ -92,7 +108,7 @@ def main() -> None:
     login(token=hf_token, add_to_git_credential=False)
 
     params = _load_params()
-    hf_model_repo = params["hf_model_repo"]
+    hf_model_repo = _resolve_hf_model_repo(params)
     hf_lora_repo = _resolve_hf_lora_repo(params)
 
     # YAML やエディタの都合で数値が str になることがある（bitsandbytes が lr で TypeError）

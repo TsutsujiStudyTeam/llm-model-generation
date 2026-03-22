@@ -5,7 +5,7 @@
 このプロジェクトは、Llama 系（Unsloth 4bit）モデルのファインチューニング（学習）から、学習済み LoRA アダプタの Hugging Face Hub へのデプロイ、そして複数のモデルを切り替えて試せる推論環境を作りました。
 Google Colab と Hugging Face Spaces を活用し、コストをかけずに LLM の学習から推論までを体験できることを目指します。
 
-**操作は最小限**: このプログラムはは対話入力（`input` / `notebook_login` 等）を使いません。初回のみ Colab のシークレットに `HF_TOKEN` を登録し、`training/params.yaml` を編集したうえで **「すべてのセルを実行」** すれば学習が完走します。
+**操作は最小限**: このプログラムはは対話入力（`input` / `notebook_login` 等）を使いません。Google Colab ではシークレットに **`HF_TOKEN`** と **`HF_LORA_REPO`** を登録すれば、**GitHub 上の `params.yaml` を編集しなくても** **「すべてのセルを実行」** で学習が完走します（ベースモデルを変えたいときだけ任意で **`HF_MODEL_REPO`**）。ローカルでは `.env` に同じ名前を書くか、`params.yaml` を直します。
 
 ---
 
@@ -13,19 +13,24 @@ Google Colab と Hugging Face Spaces を活用し、コストをかけずに LLM
 
 ### A. LLMに学習させる
 
-事前に手元（または GitHub 上）で `params.yaml` の `hf_lora_repo` を直し、**GitHub に反映**してから Colab を開いてください。
+**Colab**: GitHub のソースは**そのまま**使い、Hub のリポジトリ ID は **シークレット**に書きます（`params.yaml` を編集・push する必要はありません）。
 
 | # | やること |
 |---|----------|
 | 1 | [Hugging Face](https://huggingface.co/join) にログインし、[Access Tokens](https://huggingface.co/settings/tokens) で **Write** 権限のトークンを作成する。 |
 | 2 | Hugging Face 上で **空のモデル用リポジトリ**を新規作成する（例: `あなたのユーザー名/好きなリポジトリ名`）。 |
-| 3 | `training/params.yaml` の **`hf_lora_repo`** を、手順 2 の `ユーザー名/リポジトリ名` に書き換えて **コミット・プッシュ**する。 |
-| 4 | ブラウザからGoogle Colabにアクセスし、GitHUBからこのプロジェクトをロードする。 |
-| 5 | （**初回のみ**）Colab 左メニュー **🔑 シークレット** に、名前 **`HF_TOKEN`**、値に手順 1 のトークンを登録する。 |
-| 6 | メニュー **ランタイム → ランタイムのタイプを変更** で **GPU（T4 など）** を選ぶ。 |
-| 7 | メニュー **ランタイム → すべてのセルを実行** を選び、最後まで完了するのを待つ。 |
+| 3 | ブラウザから Google Colab にアクセスし、GitHub からこのプロジェクトのノートブック（`training/finetune.ipynb`）を開く。 |
+| 4 | （**初回のみ**）Colab 左メニュー **🔑 シークレット** に次を登録する。**ノートブック先頭の一覧と同じ名前**にすること。 |
+|  | **`HF_TOKEN`** … 手順 1 のトークン（必須） |
+|  | **`HF_LORA_REPO`** … 手順 2 のモデル ID `ユーザー名/リポジトリ名`（必須） |
+|  | **`HF_MODEL_REPO`** … 別のベースモデルを使うときのみ（任意。未設定なら `params.yaml` の既定） |
+|  | **`GITHUB_REPO_OWNER`** / **`GITHUB_REPO_NAME`** … 自分の GitHub にフォークした clone 元を指定するときのみ（任意） |
+| 5 | メニュー **ランタイム → ランタイムのタイプを変更** で **GPU（T4 など）** を選ぶ。 |
+| 6 | メニュー **ランタイム → すべてのセルを実行** を選び、最後まで完了するのを待つ。 |
 
-**結果**: 指定した Hub リポジトリに LoRA学習したモデル がアップロードされます。ノートブック末尾のセルは、同じ `params.yaml` のベースモデルと Hub の LoRA を読み込んで Colab 上で簡易推論テストできます。
+**ローカルで学習する場合**: リポジトリルートの `.env` に `HF_TOKEN` と `HF_LORA_REPO`（任意で `HF_MODEL_REPO`）を書くか、`training/params.yaml` の `hf_lora_repo` を自分の Hub ID に変更する。
+
+**結果**: 指定した Hub リポジトリに LoRA 学習したモデルがアップロードされます。ノートブック末尾のセルは、シークレット／環境変数または `params.yaml` で解決したベースモデルと LoRA を読み込んで Colab 上で簡易推論テストできます。
 
 ### B. 学習させたモデルで推論する
 
