@@ -160,7 +160,8 @@ def main() -> None:
         lora_alpha=lora_alpha,
         lora_dropout=lora_dropout,
         bias="none",
-        use_gradient_checkpointing="current_device",
+        # Unsloth Zoo 2026.x は "current_device" を受け付けず True / False / "unsloth" のみ
+        use_gradient_checkpointing="unsloth",
         random_state=seed,
         max_seq_length=max_seq_length,
     )
