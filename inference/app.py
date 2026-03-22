@@ -49,50 +49,49 @@ def load_model_and_tokenizer(adapter_repo: str = None):
         print(f"Model and tokenizer for {adapter_repo} already loaded.")
         return model, tokenizer
 
-    print(f"Loading base model: {BASE_MODEL_REPO}")
-    # Load base model
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=BASE_MODEL_REPO,
-        max_seq_length=2048, # Must match training max_seq_length
-        dtype=torch.bfloat16, # Use bfloat16 for inference on modern GPUs
+    hf_token = os.getenv("HF_TOKEN") or None
+    load_kw = dict(
+        max_seq_length=2048,  # Must match training max_seq_length
+        dtype=torch.bfloat16,
         load_in_4bit=True,
     )
+    if hf_token:
+        load_kw["token"] = hf_token
 
-    if adapter_repo and adapter_repo != "No LoRA Adapter":
-        print(f"Loading LoRA adapter: {adapter_repo}")
-        try:
-            # Re-initialize model with adapter if changing
-            if current_adapter_repo != adapter_repo and current_adapter_repo is not None:
-                # Need to re-load base model if changing adapters without merging
-                # For simplicity, we re-load the base model always
-                model, tokenizer = FastLanguageModel.from_pretrained(
-                    model_name=BASE_MODEL_REPO,
-                    max_seq_length=2048,
-                    dtype=torch.bfloat16,
-                    load_in_4bit=True,
-                )
-            
-            # Load the LoRA adapter
-            FastLanguageModel.load_lora_into_model(
-                model,
-                adapter_repo,
-                token=os.getenv("HF_TOKEN") # Use HF_TOKEN from environment variables for private repos
+    # Unsloth 2026.x: FastLanguageModel.load_lora_into_model は無い。Hub の LoRA リポジトリ ID を
+    # from_pretrained に渡すと adapter_config からベースを解決して読み込む。
+    try:
+        if adapter_repo and adapter_repo != "No LoRA Adapter":
+            print(f"Loading base + LoRA from Hub (PEFT repo): {adapter_repo}")
+            model, tokenizer = FastLanguageModel.from_pretrained(
+                model_name=adapter_repo,
+                **load_kw,
             )
-            model.eval() # Set model to evaluation mode
             current_adapter_repo = adapter_repo
             print(f"Successfully loaded adapter: {adapter_repo}")
-        except Exception as e:
+        else:
+            print(f"Loading base model: {BASE_MODEL_REPO}")
+            model, tokenizer = FastLanguageModel.from_pretrained(
+                model_name=BASE_MODEL_REPO,
+                **load_kw,
+            )
+            current_adapter_repo = "No LoRA Adapter"
+            print("Using base model without LoRA adapter.")
+        model.eval()
+    except Exception as e:
+        if adapter_repo and adapter_repo != "No LoRA Adapter":
             print(f"Failed to load adapter {adapter_repo}: {e}")
-            # Fallback to base model if adapter loading fails
             current_adapter_repo = "No LoRA Adapter"
             print("Falling back to base model for inference.")
-    elif adapter_repo == "No LoRA Adapter":
-        current_adapter_repo = "No LoRA Adapter"
-        print("Using base model without LoRA adapter.")
-    
-    # Ensure model is in inference mode
-    FastLanguageModel.for_inference(model)
+            model, tokenizer = FastLanguageModel.from_pretrained(
+                model_name=BASE_MODEL_REPO,
+                **load_kw,
+            )
+            model.eval()
+        else:
+            raise
 
+    FastLanguageModel.for_inference(model)
     return model, tokenizer
 
 def get_available_lora_adapters():
