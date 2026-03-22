@@ -54,9 +54,6 @@
 | **12** | **学習対象のファイルを選択** | 「学習用ファイルを選んでください」が表示されたらJSONL拡張子のファイルを選択してアップロードする（このリポジトリにデータセットサンプルとして用意されている「data/dataset.jsonl」を選択してみてください） ![手順12](documents/README_images/6.png) |
 | **13** | **完了確認** | 「3. 学習の実行」セルの出力に<br>**`# 学習完了 — Hugging Face の「モデル ID」`** が出れば成功 ![手順13](documents/README_images/7.png) |
 
-> [!IMPORTANT]
-> **シークレットの注意点**: `HF_TOKEN` などを入力した際、右側の「ノートブックからのアクセス」スイッチを**オン**にするのを忘れないようにしてください。
-
 ### 3-2. 学習させたモデルで推論する手順
 
 #### A. Google Colabで実行する場合の手順【推奨】
@@ -110,7 +107,7 @@ python inference/app.py
 
 ## 📈 5. データセットについて
 
-`data/` 配下には、代表的な **JSONL 形式のサンプル**を 4 種類置いています。それぞれの説明と用途を説明します。
+`data/` 配下には、代表的な **JSONL 形式のサンプル**を 4 種類置いています。`training/finetune_script.py` は **`training/params.yaml` の `dataset_format`**（`alpaca` / `messages` / `text` / `prompt_completion` / `auto`）または環境変数 **`TRAINING_DATASET_FORMAT`** で形式を選び、いずれも **`text` 列に正規化してから** LoRA 学習します（`auto` は先頭レコードのキーから推定）。Messages 型はベースモデルの **`tokenizer.chat_template`** が必要です。
 
 ### 5.1 各データセットの説明
 

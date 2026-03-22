@@ -10,9 +10,12 @@ hf_model_repo: "unsloth/Llama-3.2-3B-Instruct-bnb-4bit"
 # Hugging Face: LoRA アップロード先。Colab ではシークレット HF_LORA_REPO を推奨。
 hf_lora_repo: "YOUR_USERNAME/YOUR_LORA_REPO"
 
-# 学習用 JSONL（Alpaca 形式: instruction / input / output）。相対パスはリポジトリルート基準。
+# 学習用 JSONL。相対パスはリポジトリルート基準。
 # 環境変数 TRAINING_DATASET_PATH または TRAINING_DATASET_URL があればこちらより優先。
 dataset_jsonl: "data/dataset.jsonl"
+# 形式: alpaca | messages | text | prompt_completion | auto（先頭行のキーから推定）
+# 環境変数 TRAINING_DATASET_FORMAT（Colab シークレット可）があればこちら優先。
+dataset_format: auto
 
 # Training Parameters
 lora_r: 16

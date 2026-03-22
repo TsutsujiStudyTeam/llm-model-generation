@@ -17,6 +17,7 @@ def test_params_yaml_exists_and_loads():
         "hf_model_repo",
         "hf_lora_repo",
         "dataset_jsonl",
+        "dataset_format",
         "lora_r",
         "max_steps",
         "output_dir",
