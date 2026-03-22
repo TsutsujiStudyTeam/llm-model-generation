@@ -32,6 +32,7 @@
 1. [Hugging Face](https://huggingface.co/new) で **New model**（または同等の「新しいモデル用リポジトリ」）を作成する。  
 2. 表示されている **`namespace/リポジトリ名`** を覚える、またはメモしておくこと。後段の作業で使用します。
 
+
 ## ▶️ 3. 実行手順
 
 ### 3-1. LLMに学習させる手順
@@ -150,3 +151,25 @@ python inference/app.py
 ### ベースモデルを変更する場合
 Google Colabのシークレットに **HF_MODEL_REPO** パラメータを追加し、モデルIDを記載する。
 - (例) ```HF_MODEL_REPO```：```unsloth/llama-3-8b-Instruct-bnb-4bit```
+
+## 補足資料: 学習〜推論のフロー
+
+学習で push した **LoRA 用リポジトリの ID** を、推論でもそのまま指定します。ベースモデルは **別の公開リポジトリ**から取得します。
+
+```mermaid
+flowchart TB
+  subgraph HuggingFace [Hugging Face]
+    A[ベースモデル ID]
+    C[(あなたの LoRA リポジトリ)]
+  end
+  subgraph GoogoleColab [Google Colab]
+    B[LoRA 学習プログラム]
+    D[推論プログラム]
+  end
+  A -->|取得| B[学習プログラム]
+  F["データセット(.jsonl)"] -->|アップロード| B
+  B -->|push| C[(あなたの LoRA リポジトリ)]
+  C -->|モデル ID| D[推論プログラム]
+  G[プロンプト] -->|入力| D
+  D -->|出力| E[推論結果]
+```
