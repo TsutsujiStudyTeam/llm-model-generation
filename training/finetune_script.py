@@ -205,6 +205,33 @@ def main() -> None:
     tokenizer.push_to_hub(hf_lora_repo, token=hf_token)
     print("LoRA adapter uploaded to Hugging Face Hub.")
 
+    lora_url = f"https://huggingface.co/{hf_lora_repo}"
+    base_url = f"https://huggingface.co/{hf_model_repo}"
+
+    print()
+    print("#" * 64)
+    print("# 学習完了 — Hugging Face の「モデル ID」（repo_id）コピー用")
+    print("#" * 64)
+    print()
+    print("┌─ ① 今回アップロードした LoRA のモデル ID（推論では主にこちら）")
+    print("│")
+    print(f"│     {hf_lora_repo}")
+    print("│")
+    print(f"│   → Gradio のアダプタ選択 / DEFAULT_LORA_ADAPTER_REPO に上記をそのまま貼る")
+    print(f"│   → Hub: {lora_url}")
+    print("│")
+    print("└─ （形式は「ユーザー名または組織名 / リポジトリ名」＝ Hub のモデル ID）")
+    print()
+    print("┌─ ② ベースモデル ID（学習に使った下支え。推論の BASE と一致させる）")
+    print("│")
+    print(f"│     {hf_model_repo}")
+    print("│")
+    print(f"│   → inference/app.py の BASE_MODEL_REPO と同じであること")
+    print(f"│   → Hub: {base_url}")
+    print("└" + "─" * 58)
+    print()
+    print("#" * 64)
+
 
 if __name__ == "__main__":
     main()

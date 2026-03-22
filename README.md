@@ -5,7 +5,7 @@
 このプロジェクトは、Llama 系（Unsloth 4bit）モデルのファインチューニング（学習）から、学習済み LoRA アダプタの Hugging Face Hub へのデプロイ、そして複数のモデルを切り替えて試せる推論環境を作りました。
 Google Colab と Hugging Face Spaces を活用し、コストをかけずに LLM の学習から推論までを体験できることを目指します。
 
-**特徴：操作は最小限**: 学習ノートブックは対話入力（`input` / `notebook_login` 等）を使いません。初回のみ Colab のシークレットに `HF_TOKEN` を登録し、`training/params.yaml` を編集したうえで **「すべてのセルを実行」** すれば学習が完走します。
+**操作は最小限**: このプログラムはは対話入力（`input` / `notebook_login` 等）を使いません。初回のみ Colab のシークレットに `HF_TOKEN` を登録し、`training/params.yaml` を編集したうえで **「すべてのセルを実行」** すれば学習が完走します。
 
 ---
 
@@ -67,7 +67,7 @@ Google Colab と Hugging Face Spaces を活用し、コストをかけずに LLM
 │   └── params.yaml        # 学習パラメータ・Hub 上の LoRA リポジトリ名
 ├── inference/             # Hugging Face Spaces 用（Gradio）
 ├── data/
-│   └── dataset.jsonl
+│   └── dataset.jsonl      # ★最重要学習対象のデータセット★
 ├── tests/                   # レイアウト・設定の簡易テスト（GPU 不要）
 ├── requirements-dev.txt     # テスト用依存（ローカル venv 専用）
 ├── .env.example             # HF_TOKEN 記載例（.env にコピーして利用）
