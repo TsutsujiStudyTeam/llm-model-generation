@@ -24,7 +24,7 @@ except ImportError:
 
 # Base model to load
 # This should match hf_model_repo from training/params.yaml
-BASE_MODEL_REPO = "unsloth/llama-3.2-alpaca-bnb-4bit"
+BASE_MODEL_REPO = "unsloth/Llama-3.2-3B-Instruct-bnb-4bit"
 # This is a placeholder, in a real scenario you would list available LoRA adapters
 # or fetch them from a Hugging Face user/org.
 # We expect LoRA adapters to be pushed with model.push_to_hub(repo_id, token=True)
