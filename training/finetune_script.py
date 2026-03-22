@@ -62,6 +62,17 @@ def _require_hf_token() -> str:
     return token
 
 
+def _coerce_float(value, *, name: str) -> float:
+    """YAML / 環境によって str になる数値を float へ（bitsandbytes の lr TypeError 対策）。"""
+    if isinstance(value, bool):
+        raise TypeError(f"{name} must be numeric, got bool: {value!r}")
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        return float(value.strip())
+    raise TypeError(f"{name}: expected number, got {type(value).__name__}: {value!r}")
+
+
 def _resolve_hf_lora_repo(params: dict) -> str:
     env_repo = os.environ.get("HF_LORA_REPO", "").strip()
     if env_repo:
@@ -84,20 +95,21 @@ def main() -> None:
     hf_model_repo = params["hf_model_repo"]
     hf_lora_repo = _resolve_hf_lora_repo(params)
 
-    lora_r = params["lora_r"]
-    lora_alpha = params["lora_alpha"]
-    lora_dropout = params["lora_dropout"]
-    max_seq_length = params["max_seq_length"]
-    per_device_train_batch_size = params["per_device_train_batch_size"]
-    gradient_accumulation_steps = params["gradient_accumulation_steps"]
-    warmup_steps = params["warmup_steps"]
-    max_steps = params["max_steps"]
-    learning_rate = params["learning_rate"]
-    fp16 = params["fp16"]
-    logging_steps = params["logging_steps"]
-    output_dir = params["output_dir"]
-    optim = params["optim"]
-    seed = params["seed"]
+    # YAML やエディタの都合で数値が str になることがある（bitsandbytes が lr で TypeError）
+    lora_r = int(params["lora_r"])
+    lora_alpha = int(params["lora_alpha"])
+    lora_dropout = float(params["lora_dropout"])
+    max_seq_length = int(params["max_seq_length"])
+    per_device_train_batch_size = int(params["per_device_train_batch_size"])
+    gradient_accumulation_steps = int(params["gradient_accumulation_steps"])
+    warmup_steps = int(params["warmup_steps"])
+    max_steps = int(params["max_steps"])
+    learning_rate = _coerce_float(params["learning_rate"], name="learning_rate")
+    fp16 = bool(params["fp16"])
+    logging_steps = int(params["logging_steps"])
+    output_dir = str(params["output_dir"])
+    optim = str(params["optim"])
+    seed = int(params["seed"])
 
     repo_root = _repo_root()
     dataset_path = repo_root / "data" / "dataset.jsonl"
@@ -171,6 +183,21 @@ def main() -> None:
     train_output = repo_root / "training" / output_dir
     train_output.mkdir(parents=True, exist_ok=True)
 
+    training_args = TrainingArguments(
+        per_device_train_batch_size=per_device_train_batch_size,
+        gradient_accumulation_steps=gradient_accumulation_steps,
+        warmup_steps=warmup_steps,
+        max_steps=max_steps,
+        learning_rate=learning_rate,
+        fp16=fp16,
+        logging_steps=logging_steps,
+        output_dir=str(train_output),
+        optim=optim,
+        seed=seed,
+    )
+    # Transformers / TRL の内部で str に化けるケースへの保険（bitsandbytes が lr 比較で落ちる）
+    object.__setattr__(training_args, "learning_rate", float(training_args.learning_rate))
+
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -179,18 +206,7 @@ def main() -> None:
         max_seq_length=max_seq_length,
         dataset_num_proc=2,
         packing=False,
-        args=TrainingArguments(
-            per_device_train_batch_size=per_device_train_batch_size,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_steps=warmup_steps,
-            max_steps=max_steps,
-            learning_rate=learning_rate,
-            fp16=fp16,
-            logging_steps=logging_steps,
-            output_dir=str(train_output),
-            optim=optim,
-            seed=seed,
-        ),
+        args=training_args,
     )
 
     trainer.train()

@@ -19,7 +19,8 @@ per_device_train_batch_size: 2
 gradient_accumulation_steps: 4
 warmup_steps: 5
 max_steps: 60
-learning_rate: 2e-4
+# 科学記数 2e-4 は環境によって str 解釈されることがあるため 0.0002 を推奨
+learning_rate: 0.0002
 fp16: true
 logging_steps: 1
 output_dir: "outputs"
