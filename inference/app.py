@@ -1,5 +1,6 @@
 # inference/app.py
 from pathlib import Path
+import warnings
 
 import gradio as gr
 import torch
@@ -37,6 +38,17 @@ tokenizer = None
 current_adapter_repo = None
 
 # --- Helper Functions ---
+
+def _unset_generation_max_length(model) -> None:
+    """max_new_tokens 指定時に generation_config の max_length が残ると HF が警告を出すため無効化。"""
+    gc = getattr(model, "generation_config", None)
+    if gc is None:
+        return
+    try:
+        gc.max_length = None
+    except Exception:
+        pass
+
 
 def load_model_and_tokenizer(adapter_repo: str = None):
     """
@@ -91,6 +103,7 @@ def load_model_and_tokenizer(adapter_repo: str = None):
             raise
 
     FastLanguageModel.for_inference(model)
+    _unset_generation_max_length(model)
     return model, tokenizer
 
 def get_available_lora_adapters():
@@ -166,15 +179,22 @@ def chat_response(message, history, adapter_repo):
     # use_cache=False: Unsloth fast KV + recent Transformers で RoPE 形状不整合を避ける（finetune.ipynb 簡易推論と同じ）
     gen_kw = dict(
         max_new_tokens=256,
+        max_length=None,
         use_cache=False,
         do_sample=False,
         pad_token_id=pad_id,
         eos_token_id=tokenizer.eos_token_id,
     )
-    if isinstance(inputs, dict):
-        out_ids = model.generate(**inputs, **gen_kw)
-    else:
-        out_ids = model.generate(inputs, **gen_kw)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r".*max_new_tokens.*max_length.*",
+            category=UserWarning,
+        )
+        if isinstance(inputs, dict):
+            out_ids = model.generate(**inputs, **gen_kw)
+        else:
+            out_ids = model.generate(inputs, **gen_kw)
 
     new_tokens = out_ids[0, prompt_len:]
     yield tokenizer.decode(new_tokens, skip_special_tokens=True)

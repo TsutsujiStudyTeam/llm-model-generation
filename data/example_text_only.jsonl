@@ -1,0 +1,3 @@
+{"text": "### Instruction:\n与えられた文を否定文に変換してください。\n\n### Input:\n私は犬が好きです。\n\n### Response:\n私は犬が好きではありません。<|end_of_text|>"}
+{"text": "ユーザー: 日本の首都は？\nアシスタント: 東京です。"}
+{"text": "<|im_start|>user\nこんにちは\n<|im_end|>\n<|im_start|>assistant\nこんにちは。何かお手伝いできることはありますか？\n<|im_end|>"}

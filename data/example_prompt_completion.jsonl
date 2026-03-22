@@ -1,0 +1,3 @@
+{"prompt": "以下の文を否定文にしてください。\n\n文: 彼は学生です。", "completion": "彼は学生ではありません。"}
+{"prompt": "質問: 光の速さは約何 km/s ですか？", "completion": "約 300,000 km/s（正確には約 299,792 km/s）です。"}
+{"prompt": "次を英語に訳してください: お元気ですか", "completion": "How are you?"}

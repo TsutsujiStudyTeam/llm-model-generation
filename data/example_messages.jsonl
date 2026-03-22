@@ -1,0 +1,3 @@
+{"messages": [{"role": "user", "content": "日本の首都はどこですか？"}, {"role": "assistant", "content": "日本の首都は東京です。"}]}
+{"messages": [{"role": "user", "content": "私は犬が好きです。否定文にして。"}, {"role": "assistant", "content": "私は犬が好きではありません。"}, {"role": "user", "content": "もう一度、丁寧に。"}, {"role": "assistant", "content": "私は犬が好きではございません。"}]}
+{"messages": [{"role": "system", "content": "あなたは簡潔に答えるアシスタントです。"}, {"role": "user", "content": "1+1は？"}, {"role": "assistant", "content": "2です。"}]}
