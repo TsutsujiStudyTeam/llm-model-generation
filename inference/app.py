@@ -4,7 +4,6 @@ from pathlib import Path
 import gradio as gr
 import torch
 from unsloth import FastLanguageModel
-from transformers import TextStreamer, AutoTokenizer
 from huggingface_hub import HfApi
 import os
 import yaml
@@ -142,30 +141,43 @@ def chat_response(message, history, adapter_repo):
             messages.append({"role": "assistant", "content": agent})
     messages.append({"role": "user", "content": message})
 
-    inputs = tokenizer.apply_chat_template(
+    enc = tokenizer.apply_chat_template(
         messages,
         tokenize=True,
         add_generation_prompt=True,
-        return_tensors="pt"
-    ).to("cuda") # Assuming GPU is available in HF Spaces
-
-    # Use TextStreamer for streaming output
-    streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-
-    # Generate response
-    # The generation happens in a separate thread/process for streaming in Gradio
-    response_generator = model.generate(
-        inputs,
-        streamer=streamer,
-        max_new_tokens=256,
-        use_cache=True,
+        return_tensors="pt",
     )
-    
-    # Gradio expects a generator for streaming
-    for new_token in response_generator:
-        # Decode only the new tokens to send to Gradio
-        decoded_text = tokenizer.decode(new_token, skip_special_tokens=True)
-        yield decoded_text
+    dev = next(model.parameters()).device
+    if hasattr(enc, "to"):
+        inputs = enc.to(dev)
+        prompt_len = int(inputs.shape[-1])
+    else:
+        input_ids = enc["input_ids"].to(dev)
+        prompt_len = int(input_ids.shape[-1])
+        attn = enc.get("attention_mask")
+        inputs = dict(input_ids=input_ids)
+        if attn is not None:
+            inputs["attention_mask"] = attn.to(dev)
+
+    pad_id = tokenizer.pad_token_id
+    if pad_id is None:
+        pad_id = tokenizer.eos_token_id
+
+    # use_cache=False: Unsloth fast KV + recent Transformers で RoPE 形状不整合を避ける（finetune.ipynb 簡易推論と同じ）
+    gen_kw = dict(
+        max_new_tokens=256,
+        use_cache=False,
+        do_sample=False,
+        pad_token_id=pad_id,
+        eos_token_id=tokenizer.eos_token_id,
+    )
+    if isinstance(inputs, dict):
+        out_ids = model.generate(**inputs, **gen_kw)
+    else:
+        out_ids = model.generate(inputs, **gen_kw)
+
+    new_tokens = out_ids[0, prompt_len:]
+    yield tokenizer.decode(new_tokens, skip_special_tokens=True)
 
 # --- Gradio UI ---
 
